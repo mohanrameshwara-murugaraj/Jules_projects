@@ -35,9 +35,9 @@ graph LR
     end
 
     subgraph "Snowflake Medallion Architecture"
-        BRONZE[Bronze Layer<br>(Raw Ingestion)]
-        SILVER[Silver Layer<br>(Cleansed & Standardized)]
-        GOLD[Gold Layer<br>(Dimensional Models)]
+        BRONZE["Bronze Layer<br>(Raw Ingestion)"]
+        SILVER["Silver Layer<br>(Cleansed & Standardized)"]
+        GOLD["Gold Layer<br>(Dimensional Models)"]
     end
 
     subgraph "Business Intelligence"
