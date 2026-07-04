@@ -1,0 +1,9 @@
+yfinance
+pandas
+numpy
+scikit-learn
+prophet
+matplotlib
+plotly
+joblib
+pytest
