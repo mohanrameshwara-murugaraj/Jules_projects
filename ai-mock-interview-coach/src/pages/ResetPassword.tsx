@@ -3,51 +3,70 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/lib/supabase/client";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(1, { message: "Password is required." }),
+const resetPasswordSchema = z.object({
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match.",
+  path: ["confirmPassword"],
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 
-export const Login: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+export const ResetPassword: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<ResetPasswordValues>({
+    resolver: zodResolver(resetPasswordSchema),
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = async (data: ResetPasswordValues) => {
     setAuthError(null);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
+    const { error } = await supabase.auth.updateUser({
       password: data.password,
     });
 
     if (error) {
       setAuthError(error.message);
     } else {
-      const from = location.state?.from?.pathname || "/dashboard";
-      navigate(from, { replace: true });
+      setIsSuccess(true);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-border text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Password Updated</h1>
+          <p className="text-muted-foreground mb-6">
+            Your password has been successfully reset.
+          </p>
+          <Link
+            to="/login"
+            className="block w-full bg-primary text-primary-foreground py-2 rounded-md hover:bg-primary/90 transition-colors font-medium"
+          >
+            Sign in
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-border">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground">AI Mock Interview Coach</h1>
-          <p className="text-muted-foreground mt-2">Sign in to your account</p>
+          <h1 className="text-2xl font-bold text-foreground">Update Password</h1>
+          <p className="text-muted-foreground mt-2">Please enter your new password</p>
         </div>
 
         {authError && (
@@ -58,31 +77,9 @@ export const Login: React.FC = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1" htmlFor="email">
-              Email
+            <label className="block text-sm font-medium text-foreground mb-1" htmlFor="password">
+              New Password
             </label>
-            <input
-              id="email"
-              type="email"
-              className={`w-full px-3 py-2 border rounded-md outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                errors.email ? "border-destructive" : "border-input"
-              }`}
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-foreground" htmlFor="password">
-                Password
-              </label>
-              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                Forgot password?
-              </Link>
-            </div>
             <div className="relative">
               <input
                 id="password"
@@ -105,6 +102,23 @@ export const Login: React.FC = () => {
             )}
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1" htmlFor="confirmPassword">
+              Confirm New Password
+            </label>
+            <input
+              id="confirmPassword"
+              type={showPassword ? "text" : "password"}
+              className={`w-full px-3 py-2 border rounded-md outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                errors.confirmPassword ? "border-destructive" : "border-input"
+              }`}
+              {...register("confirmPassword")}
+            />
+            {errors.confirmPassword && (
+              <p className="mt-1 text-sm text-destructive">{errors.confirmPassword.message}</p>
+            )}
+          </div>
+
           <button
             type="submit"
             disabled={isSubmitting}
@@ -113,20 +127,13 @@ export const Login: React.FC = () => {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Signing in...
+                Updating...
               </>
             ) : (
-              "Sign In"
+              "Update Password"
             )}
           </button>
         </form>
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don't have an account?{" "}
-          <Link to="/register" className="text-primary font-medium hover:underline">
-            Register
-          </Link>
-        </p>
       </div>
     </div>
   );
